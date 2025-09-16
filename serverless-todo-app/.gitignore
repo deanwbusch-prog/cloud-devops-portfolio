@@ -1,0 +1,19 @@
+# General
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Node (Lambda functions)
+node_modules/
+npm-debug.log
+
+# Python (if using Lambda with Python)
+__pycache__/
+*.pyc
+
+# Lambda build zips
+*.zip
+
+# Local configs (never commit secrets)
+frontend/js/config.js
