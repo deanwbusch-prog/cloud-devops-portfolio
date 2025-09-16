@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Sid": "Logs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+      "Resource": "*" },
+    { "Sid": "BackupJobs",
+      "Effect": "Allow",
+      "Action": [
+        "backup:StartBackupJob",
+        "backup:DescribeBackupJob",
+        "backup:ListBackupJobs",
+        "backup:ListProtectedResources"
+      ],
+      "Resource": "*" },
+    { "Sid": "VaultAccess",
+      "Effect": "Allow",
+      "Action": ["backup:ListBackupVaults","backup:ListRecoveryPointsByBackupVault"],
+      "Resource": "*" }
+  ]
+}
