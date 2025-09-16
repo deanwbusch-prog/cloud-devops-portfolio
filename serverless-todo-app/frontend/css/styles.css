@@ -1,0 +1,15 @@
+:root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+body { margin: 0; background: #0f1115; color: #eaeaea; }
+header, footer { padding: 12px 20px; background: #151821; display:flex; align-items:center; justify-content:space-between; }
+h1 { margin: 0; font-size: 20px; }
+main { max-width: 800px; margin: 24px auto; padding: 0 16px; }
+section { background: #1a1f2b; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+input, button { padding: 10px 12px; border-radius: 8px; border: 1px solid #2a3142; background: #0f1320; color: #eaeaea; }
+button { cursor: pointer; }
+.hidden { display: none; }
+.composer { display: flex; gap: 8px; }
+#task-list { list-style: none; padding: 0; margin-top: 16px; }
+.task { display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; border: 1px solid #2a3142; border-radius: 8px; margin-bottom: 8px; }
+.task .left { display:flex; align-items:center; gap: 10px; }
+.task .actions { display:flex; gap: 8px; }
+.task.completed .title { text-decoration: line-through; opacity: 0.6; }
