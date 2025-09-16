@@ -48,3 +48,6 @@ Plan name: `DRDailyPlan`
 
 ```bash
 ./scripts/cleanup.sh us-west-1 DRVault DRDailyPlan dr-backup-trigger dr-verify-backup
+
+## License
+MIT
