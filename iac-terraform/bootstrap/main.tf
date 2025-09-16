@@ -1,18 +1,44 @@
-module "vpc" {
-  source               = "./modules/vpc"
-  project              = var.project
-  vpc_cidr             = var.vpc_cidr
-  public_subnet_cidrs  = var.public_subnet_cidrs
-  private_subnet_cidrs = var.private_subnet_cidrs
-  enable_vpc_flow_logs = var.enable_vpc_flow_logs
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
+  }
 }
 
-module "ec2" {
-  source          = "./modules/ec2"
-  project         = var.project
-  subnet_id       = module.vpc.public_subnet_ids[0]
-  vpc_id          = module.vpc.vpc_id
-  allowed_ssh_cidr= var.allowed_ssh_cidr
-  key_name        = var.key_name
-  instance_type   = var.instance_type
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_s3_bucket" "state" {
+  bucket = var.state_bucket_name
+}
+
+resource "aws_s3_bucket_versioning" "state" {
+  bucket = aws_s3_bucket.state.id
+  versioning_configuration { status = "Enabled" }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
+  bucket = aws_s3_bucket.state.id
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "state" {
+  bucket                  = aws_s3_bucket.state.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_dynamodb_table" "lock" {
+  name         = var.lock_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+  attribute { name = "LockID"; type = "S" }
 }
