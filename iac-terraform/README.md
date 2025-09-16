@@ -17,7 +17,7 @@ By managing everything as code, this setup can be quickly deployed, destroyed, o
 ---
 
 ## Architecture
-![Architecture Diagram](docs/architecture.png)
+![Architecture Diagram](docs/Infrastructure-as-Code_Architecture.png)
 
 **Workflow:**
 1. Developer writes Terraform code and commits it to GitHub.
