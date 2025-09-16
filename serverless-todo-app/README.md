@@ -1,119 +1,42 @@
-# Serverless To-Do App
+# Serverless To-Do App (Manual Build)
 
-## Overview
-This project is a fully serverless web application built on AWS that allows users to securely manage their tasks with full CRUD (Create, Read, Update, Delete) functionality.  
-
-The architecture is designed for **scalability**, **low operational cost**, and **ease of management** by using AWS managed services.  
-This app demonstrates cloud-native development skills in serverless design and is ideal for showcasing modern AWS best practices.
-
----
+A fully serverless web application that you’ll provision **manually** (no SAM/CDK) to demonstrate hands-on mastery of AWS fundamentals: Cognito, API Gateway (HTTP API + JWT), Lambda (Node.js 18), DynamoDB, S3 (static), CloudFront (OAI), IAM, and CloudWatch.
 
 ## Architecture
 ![Architecture Diagram](docs/Serverless_Application_Architecture.png)
 
-**Workflow**
-1. **User Authentication** – Amazon Cognito handles user registration, login, and secure authentication.  
-2. **API Routing** – Amazon API Gateway acts as the front door for all HTTP requests.  
-3. **Business Logic** – AWS Lambda executes the backend functions for CRUD operations.  
-4. **Data Storage** – Amazon DynamoDB stores tasks in a scalable NoSQL database.  
-5. **Frontend Hosting** – A static web app hosted on Amazon S3 and distributed globally via Amazon CloudFront.  
+**Flow**
+1) Cognito authenticates users and issues JWTs  
+2) API Gateway (HTTP API) verifies JWTs via Cognito authorizer  
+3) Lambda implements CRUD  
+4) DynamoDB stores tasks (`PK: userId`, `SK: taskId`)  
+5) S3 + CloudFront (OAI) serves frontend securely
 
----
+## Tech
+Cognito • API Gateway • Lambda • DynamoDB • S3 • CloudFront • IAM • CloudWatch
 
-## AWS Services Used
-- **Amazon Cognito** – User sign-up and sign-in with JWT authentication.  
-- **Amazon API Gateway** – REST API endpoints.  
-- **AWS Lambda** – Compute for backend logic.  
-- **Amazon DynamoDB** – NoSQL database for tasks.  
-- **Amazon S3** – Static hosting for frontend files.  
-- **Amazon CloudFront** – Content delivery network (CDN).  
-- **Amazon CloudWatch** – Monitoring, logs, and alarms.  
-- **AWS IAM** – Secure role-based permissions.  
+## Manual Setup (high level)
+1. **Cognito**: Create User Pool + App Client (no secret).  
+2. **DynamoDB**: Create table `serverless-todo-app-tasks` (userId, taskId).  
+3. **IAM**: Create Lambda execution role (basic logs + table CRUD on this table only).  
+4. **Lambda**: Create function from `backend/functions/handler.js`, env `TABLE_NAME`.  
+5. **API Gateway (HTTP API)**: Create API, add **JWT authorizer** (User Pool + Client ID), add routes:  
+   - POST `/tasks` → Lambda  
+   - GET `/tasks` → Lambda  
+   - PUT `/tasks/{taskId}` → Lambda  
+   - DELETE `/tasks/{taskId}` → Lambda  
+6. **S3 + CloudFront**: Create **private** bucket for frontend; create CloudFront distribution with **OAI** and S3 as origin; default root `index.html`.  
+7. **Frontend config**: Copy `frontend/js/config.template.js` → `config.js` and fill in **UserPoolId**, **UserPoolClientId**, **apiBaseUrl**.  
+8. **Monitoring**: Verify CloudWatch logs; create alarms for API 5XX and Lambda errors.  
+9. **Diagram**: Use **AWS Perspective** to scan and export PNG to `docs/`.
 
----
+## Run
+Open the **CloudFront domain** → Sign up → Confirm → Log in → CRUD tasks.
 
-## Features
-- User registration and login with Cognito.  
-- CRUD operations on tasks.  
-- Fully serverless, pay-as-you-go infrastructure.  
-- Scales automatically with no manual server management.  
-- Global delivery with low latency.  
+## Security
+- JWT-protected API (Cognito authorizer)  
+- Lambda IAM is **least-privilege** to only this table  
+- S3 is private; CloudFront OAI is the only reader
 
----
-
-## Folder Structure
-serverless-todo-app/
-│
-├── backend/
-│ ├── functions/ # Lambda functions
-│ ├── templates/ # AWS SAM templates
-│ └── requirements.txt
-│
-├── frontend/
-│ ├── index.html
-│ ├── css/
-│ └── js/
-│
-├── docs/
-│ └── Serverless_Application_Architecture.png
-│
-└── README.md
-
----
-
-## Deployment Instructions
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/deanwbusch-prog/serverless-todo-app.git
-cd serverless-todo-app
-2. Configure AWS CLI
-aws configure
-Default region: us-west-1
-
-3. Deploy Backend (SAM)
-cd backend
-sam build
-sam deploy --guided
-Record outputs:
-API Gateway endpoint URL
-Cognito User Pool ID + App Client ID
-Identity Pool ID
-DynamoDB table name
-
-4. Deploy Frontend
-aws s3 mb s3://serverless-todo-app-frontend-us-west-1
-aws s3 sync ./frontend s3://serverless-todo-app-frontend-us-west-1 --delete
-Block all public access.
-Create a CloudFront distribution with S3 as the origin.
-Save CloudFront domain name (e.g., https://d1234abcd.cloudfront.net).
-
-5. Configure Frontend
-Edit frontend/js/auth.js with your Cognito IDs.
-Edit frontend/js/api.js with your API Gateway URL.
-
-Usage
-Open CloudFront domain in browser.
-Register/login via Cognito.
-Add, update, and delete tasks.
-
-Security
-Cognito protects API endpoints with JWT tokens.
-IAM roles use least-privilege access (Lambda only has DynamoDB read/write).
-CloudFront Origin Access Identity (OAI) secures S3 bucket.
-
-Monitoring
-CloudWatch Logs: Lambda and API Gateway logs.
-CloudWatch Alarms:
-API Gateway 5XXError > 5 in 5 minutes.
-Lambda Errors > 1 in 5 minutes.
-Optional: Enable AWS X-Ray for tracing.
-
-Future Enhancements
-Email notifications with SNS.
-Task priority & tagging.
-CI/CD with CodePipeline.
-More detailed dashboards with CloudWatch.
-
-License
-This project is licensed under the MIT License.
+## License
+MIT
