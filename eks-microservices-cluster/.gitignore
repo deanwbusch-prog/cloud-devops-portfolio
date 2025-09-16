@@ -1,0 +1,23 @@
+# General
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Docker
+*.tar
+
+# Python (backend)
+__pycache__/
+*.pyc
+
+# Node (frontend if expanded)
+node_modules/
+
+# K8s configs
+kubeconfig*
+*.crt
+*.key
+
+# Secrets (never commit!)
+k8s-manifests/secrets/*.yaml
