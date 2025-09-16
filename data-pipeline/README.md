@@ -62,3 +62,6 @@ Least privilege IAM for Glue to only the target buckets + catalog
 S3 Block Public Access on all buckets
 Encryption at rest (S3 SSE-S3/SSE-KMS) and in transit (HTTPS)
 CloudWatch logs for Glue job runs
+
+## License
+MIT
