@@ -1,0 +1,4 @@
+# from your repo root
+mkdir -p eks/iam
+curl -o eks/iam/alb-controller-policy.json \
+  https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.13.3/docs/install/iam_policy.json
