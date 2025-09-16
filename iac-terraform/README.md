@@ -1,126 +1,79 @@
-# Infrastructure as Code (IaC) with Terraform
+# Infrastructure as Code (IaC) with Terraform — AWS (Manual, Modular)
 
-## Overview
-This project demonstrates how to **provision AWS resources using Terraform** in a secure, scalable, and automated way.  
-It showcases how Infrastructure as Code (IaC) enables repeatable deployments and consistent cloud environments, which are essential skills for modern DevOps and cloud engineers.
-
-This project uses Terraform to create core AWS infrastructure including:
-- Virtual Private Cloud (VPC)
-- Subnets
-- Security Groups
-- EC2 instances
-- S3 buckets
-- IAM roles and policies
-
-By managing everything as code, this setup can be quickly deployed, destroyed, or modified through version-controlled Terraform files.
+This project demonstrates **secure, repeatable AWS provisioning** using Terraform, built **piece-by-piece** so you deeply understand each moving part. It includes a remote backend (S3 + DynamoDB locks), modular VPC + EC2, security groups, and optional VPC Flow Logs.
 
 ---
 
 ## Architecture
+
 ![Architecture Diagram](docs/Infrastructure-as-Code_Architecture.png)
 
-**Workflow:**
-1. Developer writes Terraform code and commits it to GitHub.
-2. Terraform CLI initializes and plans infrastructure changes.
-3. Terraform applies the plan and provisions resources on AWS.
-4. AWS services are created and managed automatically.
+**Flow**
+1. You write Terraform and commit to GitHub
+2. Terraform uses a **remote backend** (S3) with **DynamoDB locks**
+3. `terraform plan` previews changes; `terraform apply` provisions infra
+4. AWS resources (VPC, subnets, IGW/NAT, route tables, EC2, SGs, S3) come online
+
+**Core Services**: VPC, Subnets, IGW/NAT, Route Tables, EC2, S3 (state), DynamoDB (state lock), IAM (minimal), CloudWatch (Flow Logs optional)
 
 ---
 
-## AWS Services Managed
-- **Amazon VPC** – Creates private, secure networking for AWS resources.
-- **Amazon EC2** – Launches compute instances inside the VPC.
-- **Amazon S3** – Stores state files, logs, and static assets.
-- **AWS IAM** – Manages secure permissions and roles for services.
-- **Amazon CloudWatch** – Monitors deployed resources.
-- **Security Groups** – Controls inbound and outbound traffic.
+## What’s Included
+
+- **Bootstrap stack** (`bootstrap/`) to create S3 bucket + DynamoDB lock table
+- **Remote state** configuration (`backend.tf`) wired to that bucket/table
+- **Modules**
+  - `vpc`: VPC, public/private subnets (multi-AZ), IGW, NAT GW, routes
+  - `ec2`: security group + single EC2 instance (Amazon Linux 2023) with user-data
+- **Variables** with safe defaults; **tfvars example**
+- **AWS Perspective** steps to export the architecture PNG
 
 ---
 
-## Tools Used
-- **Terraform** – Multi-cloud infrastructure provisioning.
-- **AWS CLI** – Interacting with AWS services directly.
-- **GitHub** – Version control for Terraform configurations.
-- **Visual Studio Code (VS Code)** – Code editing and project management.
+## Quick Start
 
----
+> Region default is **us-west-1**. Change with `var.region` if needed.
 
-## Folder Structure
-iac-terraform/
-│
-├── main.tf # Main Terraform configuration
-├── variables.tf # Input variables
-├── outputs.tf # Output values after deployment
-├── provider.tf # AWS provider configuration
-├── modules/ # Reusable Terraform modules
-│ ├── vpc/
-│ │ ├── main.tf
-│ │ ├── variables.tf
-│ │ └── outputs.tf
-│ └── ec2/
-│ ├── main.tf
-│ ├── variables.tf
-│ └── outputs.tf
-├── docs/
-│ └── architecture.png # Architecture diagram
-└── README.md
-
----
-
-## Deployment Instructions
-
-### **1. Clone the Repository**
+1) **Bootstrap remote state (one-time)**
 ```bash
-git clone https://github.com/deanwbusch-prog/iac-terraform.git
-cd iac-terraform
-
-2. Configure AWS CLI
-Make sure your AWS CLI is set up for the us-west-1 region:
-aws configure
-AWS Access Key ID: Your AWS Access Key
-AWS Secret Access Key: Your AWS Secret Key
-Default region name: us-west-1
-Default output format: json
-
-3. Initialize Terraform
-Initialize the project to download required Terraform providers and modules.
+cd bootstrap
 terraform init
+terraform apply -auto-approve
+Copy the state_bucket and lock_table outputs.
 
-4. Validate Configuration
-Ensure that the Terraform code is valid and there are no syntax errors.
-terraform validate
+2.Configure backend
+Open backend.tf at repo root and set the bucket/table (see comment markers).
+Then:
+cd ..
+terraform init -migrate-state
 
-5. Plan Infrastructure
-Review the resources that Terraform will create.
+3.Plan & Apply (VPC first, then EC2)
+# See what will be created
 terraform plan
-
-6. Apply Infrastructure
-Provision the AWS resources defined in the configuration.
+# Apply full stack
 terraform apply
-Type yes when prompted to confirm the deployment.
 
-7. Verify Resources in AWS
-Go to the AWS Console and check:
-VPC: Confirm VPC and subnets are created.
-EC2: Verify instances are running.
-S3: Ensure bucket is present.
-IAM: Check that roles and policies are configured correctly.
+4.Outputs
+VPC ID, public subnet IDs, EC2 public IP, etc.
 
-8. Destroy Infrastructure
-When finished testing, clean up all AWS resources:
+5.Destroy (when done)
 terraform destroy
-Security Considerations
-IAM least privilege – Only minimal permissions granted to Terraform.
-Terraform state file – Stored securely in S3 (remote backend recommended).
-Version control – GitHub tracks changes to prevent misconfigurations.
-Environment separation – Use separate workspaces for dev, test, and production.
+Destroy the root stack first, then cd bootstrap && terraform destroy last.
+
+Security
+Remote state: versioned, encrypted S3 + DynamoDB locking
+Security groups: SSH restricted to allowed_ssh_cidr (your IP)
+No hardcoded AMIs: Amazon Linux 2023 resolved dynamically
+Workspaces: recommended for dev/test/prod separation
+
+AWS Perspective (Diagram)
+Deploy AWS Perspective (AWS Solutions), scan the account/region, and export a PNG of VPC + subnets + routes + EC2. Save as docs/Infrastructure-as-Code_Architecture.png and commit.
 
 Future Enhancements
-Add remote backend with S3 and DynamoDB for secure state management.
-Implement CI/CD pipeline using GitHub Actions or AWS CodePipeline.
-Add CloudFormation templates for comparison.
-Deploy multi-region architectures for high availability.
-Integrate monitoring and alerts using CloudWatch metrics and alarms.
+GitHub Actions CI (fmt/validate/plan)
+Private ALB + AutoScaling Groups
+SSM Session Manager (no SSH)
+Multi-region DR patterns
 
 License
-This project is licensed under the MIT License.
+MIT
