@@ -9,7 +9,7 @@ This app demonstrates cloud-native development skills in serverless design and i
 ---
 
 ## Architecture
-![Architecture Diagram](docs/architecture.png)
+![Architecture Diagram](docs/Serverless Application_Architecture.png)
 
 **Workflow:**
 1. **User Authentication**  
