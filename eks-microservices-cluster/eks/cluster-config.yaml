@@ -1,0 +1,25 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-microservices
+  region: us-west-1
+  version: "1.29"
+
+vpc:
+  # let eksctl create a VPC; or specify subnets here for control
+  cidr: "10.21.0.0/16"
+
+managedNodeGroups:
+  - name: workers
+    instanceType: t3.medium
+    desiredCapacity: 3
+    minSize: 2
+    maxSize: 6
+    volumeSize: 20
+    amiFamily: AmazonLinux2
+    labels: { role: worker }
+    tags:
+      nodegroup: workers
+iam:
+  withOIDC: true
