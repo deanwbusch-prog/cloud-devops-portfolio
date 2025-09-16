@@ -1,0 +1,5 @@
+{
+  "resource_arns": [
+    "arn:aws:ec2:us-west-1:123456789012:volume/vol-0123456789abcdef0"
+  ]
+}
