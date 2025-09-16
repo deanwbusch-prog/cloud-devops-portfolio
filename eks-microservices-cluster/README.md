@@ -56,3 +56,6 @@ Cluster name: **eks-microservices**
 ```bash
 ./scripts/cleanup.sh
 eksctl delete cluster --name eks-microservices --region us-west-1
+
+## License
+MIT
