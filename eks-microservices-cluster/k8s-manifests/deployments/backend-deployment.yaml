@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: backend
+          image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-west-1.amazonaws.com/backend:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_ENV
+              value: "prod"
+            - name: PORT
+              value: "5000"
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet: { path: /api/health, port: 5000 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /api/health, port: 5000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
