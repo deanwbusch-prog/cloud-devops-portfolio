@@ -1,8 +1,8 @@
 'use strict';
 
 const AWS = require('aws-sdk'); // v2 is available in Lambda runtime
-const { v4: uuidv4 } = require('uuid'); // We'll implement a small fallback if not present
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+const { randomUUID } = require('crypto');
+const uuidv4 = () => randomUUID();
 
 const TABLE_NAME = process.env.TABLE_NAME;
 
