@@ -4,6 +4,7 @@ const AWS = require('aws-sdk'); // v2 is available in Lambda runtime
 const { randomUUID } = require('crypto');
 const uuidv4 = () => randomUUID();
 
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.TABLE_NAME;
 
 function ok(body, statusCode = 200) {
