@@ -2,23 +2,22 @@
 // Update these values with the actual resource IDs/URLs from your AWS setup.
 
 const config = {
-  // Cognito
+  // ✅ Cognito
   cognito: {
-    REGION: "us-west-1", // your region
-    USER_POOL_ID: "us-west-1_XXXXXXXXX",       // from Cognito User Pool
-    APP_CLIENT_ID: "XXXXXXXXXXXXXXXXXXXXXXXXXX", // from Cognito App Client
-    IDENTITY_POOL_ID: "us-west-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" // from Identity Pool
+    REGION: "us-east-2", // your region
+    USER_POOL_ID: "us-east-2_6Y9E3tgYX",       // from Cognito User Pool
+    APP_CLIENT_ID: "4bk1bttj1jb0eepn9smouo08am", // from Cognito App Client
   },
 
-  // API Gateway
+  // ✅ API Gateway
   api: {
-    REGION: "us-west-1",
-    BASE_URL: "https://xxxxxxx.execute-api.us-west-1.amazonaws.com/prod" // API Gateway invoke URL
+    REGION: "us-east-2",
+    BASE_URL: "https://740ygy9xtk.execute-api.us-east-2.amazonaws.com" // API Gateway invoke URL
   },
 
-  // S3 / CloudFront (frontend hosting)
+  // ✅ S3 / CloudFront (frontend hosting)
   frontend: {
-    S3_BUCKET: "serverless-todo-app-frontend-us-west-1",  // optional reference
+    S3_BUCKET: "serverless-todo-app-frontend-us-east-2",  // optional reference
     CLOUDFRONT_URL: "https://dxxxxx.cloudfront.net"       // CloudFront distribution domain
   }
 };
