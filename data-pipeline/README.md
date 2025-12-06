@@ -1,48 +1,39 @@
-Serverless AWS Data Pipeline
-This project builds a simple serverless data pipeline on AWS using S3 (raw and processed), Glue (crawler + ETL), and Athena for analytics.​
+# Serverless AWS Data Pipeline
 
-Prerequisites
-AWS account and IAM user/role with permissions for S3, Glue, Athena, and CloudWatch.​
+This project builds a simple serverless data pipeline on AWS using S3 (raw and processed), Glue (crawler + ETL), and Athena for analytics.
 
-AWS CLI installed and configured:
+## Prerequisites
 
-aws configure (set region to us-east-2 or your chosen region).
+- AWS account and IAM user/role with permissions for S3, Glue, Athena, and CloudWatch.
+- AWS CLI installed and configured:
+  - `aws configure` (set region to `us-east-2` or your chosen region).
+- Basic familiarity with SQL (for Athena).
 
-Basic familiarity with SQL (for Athena).​
+![Architecture Diagram](docs/Data_Pipeline_Architecture.png)
 
-![Architecture Diagram](docs/Data_Pipeline_Architecture layout
+## Repository layout
 
-glue-scripts/transform_data.py – Glue PySpark ETL job.​
+- `glue-scripts/transform_data.py` – Glue PySpark ETL job.
+- `s3-samples/sample_data.csv` – sample orders data.
+- `athena-queries/query_example.sql` – Athena DDL and sample query.
+- `scripts/cleanup.sh` – deletes lab S3 buckets and objects.
+- `infra/cdk/` – AWS CDK (Python) stack for Glue IAM role, database, crawler, and job.
 
-s3-samples/sample_data.csv – sample orders data.​
+## High-level flow
 
-athena-queries/query_example.sql – Athena DDL and sample query.​
+1. Upload raw CSV to an S3 **raw** bucket.
+2. Use a Glue crawler to catalog the CSV into a Glue database and table.
+3. Run the Glue job `transform_data.py` to:
+   - Cast numeric columns.
+   - Normalize `order_date`.
+   - Compute `total_price`.
+   - Write partitioned Parquet files to a **processed** S3 bucket.
+4. Use Athena to create an external table on the processed data and run analytics queries.
 
-scripts/cleanup.sh – deletes lab S3 buckets and objects.​
+## Running the lab (manual steps)
 
-infra/cdk/ – AWS CDK (Python) stack for Glue IAM role, database, crawler, and job.
+### 1. Create buckets (adjust names and region)
 
-High-level flow
-Upload raw CSV to an S3 raw bucket.
-
-Use a Glue crawler to catalog the CSV into a Glue database and table.​
-
-Run the Glue job transform_data.py to:
-
-Cast numeric columns.
-
-Normalize order_date.
-
-Compute total_price.
-
-Write partitioned Parquet files to a processed S3 bucket.​
-
-Use Athena to create an external table on the processed data and run analytics queries.​
-
-Running the lab (manual steps)
-Create buckets (examples, adjust names and region):
-
-bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REGION=us-east-2
 
@@ -53,64 +44,72 @@ ATHENA_BUCKET="${ACCOUNT_ID}-data-pipeline-athena-results-${REGION}"
 aws s3 mb "s3://${RAW_BUCKET}" --region "${REGION}"
 aws s3 mb "s3://${PROC_BUCKET}" --region "${REGION}"
 aws s3 mb "s3://${ATHENA_BUCKET}" --region "${REGION}"
-Upload sample data:
 
-bash
+text
+
+### 2. Upload sample data
+
 aws s3 cp s3-samples/sample_data.csv "s3://${RAW_BUCKET}/raw-data/sample_data.csv"
-Glue catalog:
 
-Create Glue database, e.g. data_pipeline_db.
+text
 
-Create and run a Glue crawler on s3://${RAW_BUCKET}/raw-data/, output to data_pipeline_db.​
+### 3. Glue catalog
 
-Glue ETL job:
+- Create a Glue database, for example `data_pipeline_db`.
+- Create and run a Glue crawler on `s3://${RAW_BUCKET}/raw-data/`, output to `data_pipeline_db`.
 
-Create a Glue job using glue-scripts/transform_data.py.
+### 4. Glue ETL job
 
-Job parameters:
+- Create a Glue job using `glue-scripts/transform_data.py`.
+- Set job parameters:
+  - `--RAW_DATABASE=data_pipeline_db`
+  - `--RAW_TABLE=<table-created-by-crawler>`
+  - `--PROCESSED_S3_PATH=s3://${PROC_BUCKET}/processed/`
+- Run the job and verify Parquet files under `s3://${PROC_BUCKET}/processed/`.
 
---RAW_DATABASE=data_pipeline_db
+### 5. Athena
 
---RAW_TABLE=<table-created-by-crawler>
+- Set query result location to `s3://${ATHENA_BUCKET}/results/`.
+- Open `athena-queries/query_example.sql`, replace `<processed-bucket>` with `${PROC_BUCKET}`.
+- Run the statements to create the table and the example query.
 
---PROCESSED_S3_PATH=s3://${PROC_BUCKET}/processed/​
+### 6. Cleanup
 
-Run the job and verify Parquet files under s3://${PROC_BUCKET}/processed/.​
-
-Athena:
-
-Set query result location to s3://${ATHENA_BUCKET}/results/.​
-
-Open athena-queries/query_example.sql, replace <processed-bucket> with ${PROC_BUCKET}.
-
-Run the statements to create the table and the example query.​
-
-Cleanup:
-
-bash
 ./scripts/cleanup.sh "${RAW_BUCKET}" "${PROC_BUCKET}" "${ATHENA_BUCKET}" "${REGION}"
-Infrastructure as Code (CDK)
-You can provision the Glue role, database, crawler, and job using AWS CDK (Python).​
 
-Install CDK dependencies:
+text
 
-bash
+## Infrastructure as Code (CDK)
+
+You can provision the Glue role, database, crawler, and job using AWS CDK (Python).
+
+1. Install CDK dependencies:
+
 cd infra/cdk
 pip install -r requirements.txt
-Bootstrap the environment (first time per account/region):
 
-bash
+text
+
+2. Bootstrap the environment (first time per account/region):
+
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 cdk bootstrap aws://$ACCOUNT_ID/us-east-2
-Deploy the stack:
 
-bash
+text
+
+3. Deploy the stack:
+
 cd infra/cdk
 cdk deploy DataPipelineStack
-The CDK stack imports the existing S3 buckets by name, then creates the Glue IAM role, Glue database, crawler, and the ETL job wired to glue-scripts/transform_data.py stored in the processed bucket.​
 
-CI
-A GitHub Actions workflow (.github/workflows/ci.yml) runs formatting, linting, basic tests, and cdk synth on each push to help keep the Glue code and CDK stack valid.​
+text
 
-License
-This project is released under the MIT License. See the LICENSE file for details.
+The CDK stack imports the existing S3 buckets by name, then creates the Glue IAM role, Glue database, crawler, and the ETL job wired to `glue-scripts/transform_data.py` stored in the processed bucket.
+
+## CI
+
+A GitHub Actions workflow at `.github/workflows/ci.yml` runs formatting, linting, basic tests, and `cdk synth` on each push to keep the Glue code and CDK stack valid.
+
+## License
+
+This project is released under the MIT License. See the `LICENSE` file for details.
