@@ -17,6 +17,8 @@ The frontend service calls the backend via Kubernetes DNS networking, and both a
 
 ## 🏗️ Architecture
 
+![Architecture Diagram](docs/Kubernete_Cluster_Architecture.png)
+
 ```
 Internet
    ↓
