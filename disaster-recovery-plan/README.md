@@ -1,53 +1,98 @@
-# AWS Disaster Recovery Plan (Manual Build)
+# AWS Disaster Recovery Plan (Terraform + AWS Backup)
 
-A hands-on Disaster Recovery (DR) setup built **manually** so you understand every piece:
-- **AWS Backup** plans + vault (daily, 30-day retention by default)
-- **S3 Versioning** for object protection
-- **Lambda automation** to trigger standardized backups and verify job status
-- **CloudWatch / EventBridge** rules for schedules + alerts
-- **Athena/CloudTrail** optional for audit
+AWS Disaster Recovery setup built around AWS Backup, Lambda, and EventBridge in a single region. The design uses tag-based policies, scheduled backups, and simple verification to mirror how real teams protect workloads in production.[web:100][web:105]
+
+- Region: `us-west-1`  
+- Backup vault: `DRVault`  
+- Backup plan: `DRDailyPlan`  
 
 ---
 
 ## Architecture
 
-![Architecture](docs/Disaster_Recovery_Architecture.png)
+AWS Backup takes daily backups of tagged resources into a dedicated vault, while EventBridge-scheduled Lambdas initiate and verify backups and send logs to CloudWatch.[web:100][web:105]
 
-**Flow**
-1) **AWS Backup** runs policies on tagged resources (EC2, EBS, RDS, DynamoDB, EFS).  
-2) **S3 Versioning** protects object data against delete/overwrite.  
-3) **Lambda** (EventBridge scheduled) triggers ad-hoc backups and verifies job success; can notify on failure.  
-4) **CloudWatch** logs/alarms for Backup jobs + Lambda.
+- AWS Backup vault stores recovery points for supported services in `us-west-1`.[web:113][web:118]  
+- Backup plan defines schedule and retention and uses tag-based resource assignment (for example, `Backup=Yes`).[web:100][web:102]  
+- EventBridge rules invoke Lambda functions on a schedule, and CloudWatch Logs capture all activity for audit.[web:105][web:108]  
 
-**Core AWS**: AWS Backup, S3, Lambda, EventBridge (CloudWatch Events), IAM, CloudWatch Logs.
+### Diagram
 
----
-
-## Region & Names
-Default region: **us-west-1**  
-Vault name: `DRVault`  
-Plan name: `DRDailyPlan`
+![Architecture](docs/Disaster_Recovery_Architecture.png) shows how AWS Backup, EventBridge, Lambda, and CloudWatch interact for scheduled backups and verification.[web:105]
 
 ---
 
-## Quick Start (high level)
+## Components
 
-1. **Enable S3 versioning** on your critical buckets.  
-2. **Create AWS Backup** vault + plan (daily rule, retention 30 days).  
-3. **Create IAM role** for Lambda (least-privilege JSON included).  
-4. **Deploy Lambda** functions (`backup_trigger.py`, `verify_backup.py`).  
-5. **Create EventBridge rules** to:  
-   - run `dr-backup-trigger` on a schedule (e.g., daily at 01:00)  
-   - run `dr-verify-backup` after backup windows (optional)  
-6. **Test recovery** (S3 version restore + AWS Backup restore job).  
-7. **Export diagram** with AWS Perspective → `docs/Disaster_Recovery_Architecture.png`.
+- **AWS Backup**  
+  - Backup vault `DRVault` in `us-west-1` to store recovery points.[web:110][web:118]  
+  - Backup plan `DRDailyPlan` with a daily schedule and retention (for example, 30 days).[web:102][web:116]  
+  - Tag-based resource selection so any supported resource with `Backup=Yes` is included automatically.[web:100][web:109]  
+
+- **Lambda functions**  
+  - `dr-backup-trigger` (optional): can start on-demand backup jobs for tagged resources or specific ARNs.[web:105]  
+  - `dr-verify-backup`: checks recent AWS Backup jobs and reports whether at least one backup completed successfully in the last window.[web:105]  
+
+- **EventBridge and CloudWatch**  
+  - EventBridge rules run the trigger and verify Lambdas on a cron schedule.[web:105][web:108]  
+  - CloudWatch Logs store Lambda output and backup job logs for troubleshooting and compliance.[web:105][web:114]  
 
 ---
 
-## Clean Up
+## How backups are selected
 
-```bash
-./scripts/cleanup.sh us-west-1 DRVault DRDailyPlan dr-backup-trigger dr-verify-backup
+Resources are enrolled in the backup plan by tag instead of hard-coding ARNs, which keeps the DR policy simple and scalable.[web:100][web:103]
+
+- Add a tag such as `Backup=Yes` to EC2 instances, EBS volumes, RDS databases, or other supported services.  
+- The backup plan’s resource assignment finds resources with that tag in `us-west-1` and includes them in the daily schedule automatically.[web:100][web:109]  
+
+---
+
+## Deploy with Terraform
+
+Terraform is used to create the backup vault, backup plan, tag-based selection, IAM roles, Lambda functions, and EventBridge rules as code.[web:102][web:116]
+
+1. Change into the Terraform directory (for example):  
+cd infra/terraform
+
+text
+2. Initialize and apply the configuration:  
+terraform init
+terraform apply
+
+text
+3. In the AWS Backup console, confirm that `DRVault`, `DRDailyPlan`, and a tag-based resource assignment exist in `us-west-1`.[web:102][web:113]  
+
+---
+
+## Using the system
+
+Day-to-day DR management is driven by tags and schedules rather than manual jobs.[web:100][web:105]
+
+- Tag any resource you want protected with `Backup=Yes`.  
+- Let the backup plan run on its daily schedule, or start an on-demand backup from the AWS Backup console when needed.[web:102]  
+- After the backup window, check the `dr-verify-backup` Lambda logs in CloudWatch to see whether recent jobs succeeded.[web:105]  
+
+For demos or runbooks:
+
+- Show that adding or removing the `Backup=Yes` tag automatically enrolls or removes a resource from the plan.[web:100][web:109]  
+- Show how `dr-verify-backup` reports failure if no successful jobs are detected in the last backup window, and what actions an engineer would take next.[web:105]  
+
+---
+
+## Cleanup
+
+To remove the DR environment safely:[web:113][web:118]
+
+- Ensure you no longer need the recovery points stored in `DRVault`.  
+- From the Terraform directory, run:  
+terraform destroy
+
+text
+- AWS Backup vaults can only be deleted when empty or when retention constraints are explicitly overridden.[web:113][web:118]  
+
+---
 
 ## License
-MIT
+
+MIT.
