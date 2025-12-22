@@ -26,7 +26,7 @@ def main():
 
     sc = SparkContext()
     glue_context = GlueContext(sc)
-    spark = glue_context.spark_session
+    _spark = glue_context.spark_session  # noqa: F841
 
     job = Job(glue_context)
     job.init(args["JOB_NAME"], args)
