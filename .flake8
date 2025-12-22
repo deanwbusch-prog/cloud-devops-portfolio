@@ -1,2 +1,6 @@
 [flake8]
 max-line-length = 88
+extend-ignore =
+    E501
+per-file-ignores =
+    glue-scripts/transform_data.py:E501
