@@ -62,7 +62,7 @@ def main():
     df = df.withColumn(
     "order_date",
     F.to_date(F.col("order_date")).cast("string"),
-)
+    )
 
     # 3) Feature engineering: total_price = quantity * price
     df = df.withColumn("total_price", F.col("quantity") * F.col("price"))
