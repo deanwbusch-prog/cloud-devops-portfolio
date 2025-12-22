@@ -18,9 +18,9 @@ def main():
         sys.argv,
         [
             "JOB_NAME",
-            "RAW_DATABASE",      # e.g. data_pipeline_db
-            "RAW_TABLE",         # e.g. raw_data (from crawler)
-            "PROCESSED_S3_PATH", # e.g. s3://.../processed/
+            "RAW_DATABASE",  # e.g. data_pipeline_db
+            "RAW_TABLE",  # e.g. raw_data (from crawler)
+            "PROCESSED_S3_PATH",  # e.g. s3://.../processed/
         ],
     )
 
@@ -36,7 +36,12 @@ def main():
     processed_path = args["PROCESSED_S3_PATH"].rstrip("/")
 
     logger.info("Starting Glue job")
-    logger.info("RAW_DATABASE=%s RAW_TABLE=%s PROCESSED_S3_PATH=%s", raw_db, raw_table, processed_path)
+    logger.info(
+        "RAW_DATABASE=%s RAW_TABLE=%s PROCESSED_S3_PATH=%s",
+        raw_db,
+        raw_table,
+        processed_path,
+    )
 
     # 1) Load from Data Catalog as DynamicFrame, then convert to Spark DataFrame
     raw_dyf = glue_context.create_dynamic_frame.from_catalog(
@@ -49,9 +54,8 @@ def main():
 
     # 2) Basic normalization / typing
     # Cast columns (if crawler inferred as string)
-    df = (
-        df.withColumn("quantity", F.col("quantity").cast("int"))
-        .withColumn("price", F.col("price").cast("double"))
+    df = df.withColumn("quantity", F.col("quantity").cast("int")).withColumn(
+        "price", F.col("price").cast("double")
     )
 
     # Ensure order_date is a date, then keep yyyy-MM-dd string for partitioning (Athena-friendly)
