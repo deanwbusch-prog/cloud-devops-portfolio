@@ -60,8 +60,8 @@ def main():
 
     # Ensure order_date is a date, then keep yyyy-MM-dd string for partitioning (Athena-friendly)
     df = df.withColumn(
-    "order_date",
-    F.to_date(F.col("order_date")).cast("string"),
+        "order_date",
+        F.to_date(F.col("order_date")).cast("string"),
     )
 
     # 3) Feature engineering: total_price = quantity * price
