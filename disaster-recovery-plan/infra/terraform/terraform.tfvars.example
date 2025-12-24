@@ -1,1 +1,14 @@
+# Copy this file to terraform.tfvars and adjust values if needed
 
+aws_region            = "us-east-2"
+backup_vault_name     = "DRVault"
+backup_plan_name      = "DRDailyPlan"
+backup_retention_days = 30
+
+# EventBridge schedule expressions (CloudWatch cron format)
+backup_schedule_cron  = "cron(0 1 * * ? *)"   # Daily at 1 AM UTC
+verify_schedule_cron  = "cron(0 2 * * ? *)"  # Daily at 2 AM UTC
+
+lambda_timeout        = 60
+backup_tag_key        = "Backup"
+backup_tag_value      = "Yes"
