@@ -1,3 +1,15 @@
+data "archive_file" "backup_trigger_zip" {
+  type        = "zip"
+  source_file = "${path.module}/../../lambda/dr-backup-trigger.py"
+  output_path = "${path.module}/dr-backup-trigger.zip"
+}
+
+data "archive_file" "verify_backup_zip" {
+  type        = "zip"
+  source_file = "${path.module}/../../lambda/dr-verify-backup.py"
+  output_path = "${path.module}/dr-verify-backup.zip"
+}
+
 variable "lambda_backup_trigger_name" {
   description = "Name of the backup trigger Lambda function."
   type        = string
@@ -94,12 +106,30 @@ resource "aws_lambda_function" "backup_trigger" {
   handler       = "backup_trigger.lambda_handler"
   runtime       = "python3.12"
 
-  filename         = "${path.module}/../../lambda-scripts/dr-backup-trigger.zip"
-  source_code_hash = filebase64sha256("${path.module}/../../lambda-scripts/dr-backup-trigger.zip")
+  filename         = data.archive_file.backup_trigger_zip.output_path
+  source_code_hash = data.archive_file.backup_trigger_zip.output_base64sha256
 
   environment {
     variables = {
-      DR_BACKUP_VAULT              = var.backup_vault_name
-      BACKUP
+      DR_BACKUP_VAULT   = var.backup_vault_name
+      BACKUP_TAG_KEY    = var.backup_tag_key
+      BACKUP_TAG_VALUE  = var.backup_tag_value
+    }
+  }
+}
+resource "aws_lambda_function" "dr_verify_backup" {
+  function_name = var.lambda_verify_backup_name
+  role          = aws_iam_role.lambda_execution_role.arn
+  handler       = "verify_backup.lambda_handler"  # module name = verify_backup.py
+  runtime       = "python3.12"
 
+  filename         = data.archive_file.verify_backup_zip.output_path
+  source_code_hash = data.archive_file.verify_backup_zip.output_base64sha256
 
+  environment {
+    variables = {
+      DR_BACKUP_VAULT = var.backup_vault_name
+      LOOKBACK_HOURS  = "26"
+    }
+  }
+}
