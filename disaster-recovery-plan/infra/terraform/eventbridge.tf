@@ -41,15 +41,13 @@ resource "aws_cloudwatch_event_rule" "verify_schedule" {
 resource "aws_cloudwatch_event_target" "verify_schedule_target" {
   rule      = aws_cloudwatch_event_rule.verify_schedule.name
   target_id = "verify-backup"
-  arn       = aws_lambda_function.verify_backup.arn
+  arn       = aws_lambda_function.dr_verify_backup.arn
 }
 
 resource "aws_lambda_permission" "allow_eventbridge_invoke_verify" {
   statement_id  = "AllowEventBridgeInvokeVerify"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.verify_backup.function_name
+  function_name = aws_lambda_function.dr_verify_backup.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.verify_schedule.arn
 }
-
-
