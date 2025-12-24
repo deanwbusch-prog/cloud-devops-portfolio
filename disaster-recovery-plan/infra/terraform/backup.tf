@@ -1,18 +1,3 @@
-terraform {
-  required_version = ">= 1.5.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.region
-}
-
 # Backup vault
 resource "aws_backup_vault" "dr_vault" {
   name = var.backup_vault_name
@@ -26,7 +11,8 @@ resource "aws_backup_plan" "dr_plan" {
     rule_name         = "DailyRule"
     target_vault_name = aws_backup_vault.dr_vault.name
 
-    schedule = "cron(0 9 * * ? *)" # 09:00 UTC (~01:00 us-west-1, adjust if needed)
+    # Daily at 09:00 UTC (adjust as needed)
+    schedule = "cron(0 9 * * ? *)"
 
     lifecycle {
       delete_after = var.backup_retention_days
@@ -46,5 +32,3 @@ resource "aws_backup_selection" "dr_selection" {
     value = var.backup_tag_value
   }
 }
-
-
