@@ -1,7 +1,7 @@
-variable "region" {
+variable "aws_region" {
   description = "AWS region to deploy the DR resources into."
   type        = string
-  default     = "us-west-1"
+  default     = "us-east-2"
 }
 
 variable "backup_vault_name" {
@@ -39,5 +39,3 @@ variable "backup_retention_days" {
   type        = number
   default     = 30
 }
-
-
