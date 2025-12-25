@@ -8,6 +8,7 @@ backup = boto3.client("backup")
 VAULT = os.getenv("DR_BACKUP_VAULT", "DRVault")
 LOOKBACK_HOURS = int(os.getenv("LOOKBACK_HOURS", "26"))  # check last backup window
 
+
 def lambda_handler(event, context):
     """
     Verifies that at least one successful backup completed in the last LOOKBACK_HOURS.
@@ -32,20 +33,37 @@ def lambda_handler(event, context):
     # Filter to this vault and (optional) resource
     filtered = [
         j for j in jobs
-        if j.get("BackupVaultName") == VAULT and
-           (not resource_arn or j.get("ResourceArn") == resource_arn)
+        if j.get("BackupVaultName") == VAULT
+        and (not resource_arn or j.get("ResourceArn") == resource_arn)
     ]
 
-    latest = sorted(filtered, key=lambda x: x.get("CreationDate", datetime.min), reverse=True)
+    # Sort newest → oldest and only keep the 3 most recent jobs
+    latest = sorted(
+        filtered,
+        key=lambda x: x.get("CreationDate", datetime.min),
+        reverse=True
+    )[:3]
 
     ok = any(j.get("State") == "COMPLETED" for j in latest)
     status = {
         "checked_jobs": len(latest),
         "ok": ok,
         "latest_states": [
-            {"id": j["BackupJobId"], "state": j["State"], "resource": j.get("ResourceArn")}
-            for j in latest[:10]
+            {
+                "id": j["BackupJobId"],
+                "state": j["State"],
+                "resource": j.get("ResourceArn")
+            }
+            for j in latest
         ]
     }
+
+    # Log a compact JSON summary for CloudWatch
+    summary_for_log = {
+        "ok": status["ok"],
+        "checked_jobs": status["checked_jobs"],
+        "latest_states": [s["state"] for s in status["latest_states"]],
+    }
+    print(json.dumps(summary_for_log))
 
     return {"statusCode": 200, "body": json.dumps(status)}
